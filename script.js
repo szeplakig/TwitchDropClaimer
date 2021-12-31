@@ -64,6 +64,7 @@ function try_get_drop() {
     _is_inventory_open = is_inventory_open();
     _is_user_menu_open = is_user_menu_open();
     _percents = Object.keys(PERCENT_TIMES);
+    _times = Object.values(PERCENT_TIMES);
 
     if (_percents.length > 1 && _percents.includes('100%')) {
         console.debug("PROBABLY CAN CLAIM NOW");
@@ -117,8 +118,23 @@ function try_get_drop() {
                             PERCENT_TIMES = {};
                         }
                         PERCENT_TIMES[progress] = Date.now();
+
+                        if (_times.length > 2) {
+                            let last_percent = _percents[_times.length - 1];
+                            const percents_remaining = 100 - parseInt(last_percent.substring(0, last_percent.length - 1));
+                            let sum_of_time_diffs = 0;
+                            let number_of_time_diffs = 0;
+                            for (let i = 1; i < _times.length - 1; i++) {
+                                sum_of_time_diffs += (_times[i + 1] - _times[i]);
+                                number_of_time_diffs++;
+                            }
+
+                            const avg_time_diff = sum_of_time_diffs / number_of_time_diffs / 1000 / 60;
+                            console.log("Approx. time remaining until next drop (mins): ", percents_remaining * avg_time_diff);
+                        }
+
                     } else {
-                        console.log("WAITING");
+                        console.log("WAITING, PROGRESS: ", progress);
                     }
                 }
             } else {
@@ -143,10 +159,15 @@ function disable_claimer() {
     }
 }
 
-function claimer() {
+function start_claimer() {
     RETRY_TIMER = setInterval(try_get_drop, RETRY_TIMEOUT);
     console.log("Timer id: ", RETRY_TIMER);
     console.log("Call disable_claimer to stop it;")
 }
 
-claimer();
+function restart_claimer() {
+    disable_claimer();
+    start_claimer();
+}
+
+restart_claimer();
