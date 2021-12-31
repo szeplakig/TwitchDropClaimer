@@ -3,6 +3,7 @@ Automatically claim twitch drops
 
 
 Guide:
+
 0. Open a TWitch stream with drops enabled (logged in)
 1. Paste script.js contents into the console (F12)
 2. Press ENTER
