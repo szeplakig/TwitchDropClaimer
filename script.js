@@ -77,11 +77,10 @@ function calculate_time_data() {
         let last_percent = _percents[_times.length - 1];
         const percents_remaining = 100 - parseInt(last_percent.substring(0, last_percent.length - 1));
         const diffs = [];
-        for (let i = 1; i < _times.length - 1; i++) {
+        for (let i = Math.max(_times.length - 10, 1); i < _times.length - 1; i++) {
             diffs.push(_times[i + 1] - _times[i]);
         }
         let time_diff_per_percent = (Math.ceil(geometric_mean(diffs) / 6000)) * 6000;
-        time_diff_per_percent / RETRY_TIMEOUT
         return ((percents_remaining * time_diff_per_percent) - TIME_TICKS_IN_PERCENT * RETRY_TIMEOUT);
     }
     return undefined;
