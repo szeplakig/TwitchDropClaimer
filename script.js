@@ -2,7 +2,7 @@ const RETRY_TIMEOUT = 1000;
 const CLAIM_TIMEOUT = 1 * 60 * 60 * 1000;
 
 let PERCENT_TIMES = {};
-
+let TIME_TICKS_IN_PERCENT = 0;
 
 function is_inventory_open() {
     return window.location.href.includes("inventory");
@@ -42,11 +42,11 @@ function try_press_inventory() {
 }
 
 function try_return_to_stream() {
-    const return_buttons = document.querySelector('[data-test-selector="video-player__video-layout"]').getElementsByTagName("button");
+    const return_buttons = document.querySelector('.persistent-player').getElementsByTagName("button");
     if (return_buttons.length != 3) {
         return false;
     }
-    return_buttons[1].click()
+    return_buttons[1].click(); // 1st button closes the persistent player, 2nd returns to the normal player, 3rd pauses the stream
     return true;
 }
 
@@ -60,11 +60,51 @@ function get_percent() {
     return paragraphs_for_percent[1].innerText.split(" ")[0];
 }
 
+function geometric_mean(array) {
+    let product = 1;
+    for (let i = 0; i < array.length; i++)
+        product = product * array[i];
+    let gm = Math.pow(product, 1 / array.length);
+    return gm;
+}
+
+
+function calculate_time_data() {
+    const _percents = Object.keys(PERCENT_TIMES);
+    const _times = Object.values(PERCENT_TIMES);
+
+    if (_times.length > 2) {
+        let last_percent = _percents[_times.length - 1];
+        const percents_remaining = 100 - parseInt(last_percent.substring(0, last_percent.length - 1));
+        const diffs = [];
+        for (let i = 1; i < _times.length - 1; i++) {
+            diffs.push(_times[i + 1] - _times[i]);
+        }
+        let g_mean_time_diff = geometric_mean(diffs);
+        diffs.filter((v) => v >= g_mean_time_diff * 0.1 && v <= g_mean_time_diff * 1.1);
+        g_mean_time_diff = geometric_mean(diffs);
+        g_mean_time_diff = (Math.ceil(g_mean_time_diff / 6000)) * 6000;
+        return ((percents_remaining * g_mean_time_diff) - TIME_TICKS_IN_PERCENT * RETRY_TIMEOUT);
+    }
+}
+
+
+function millis_to_hhmmss(millis) {
+    return new Date(millis).toISOString().slice(11, 19);
+}
+
+
+function display_remaining_time() {
+    const remaining_millis = calculate_time_data();
+    const remaining_time_str = millis_to_hhmmss(remaining_millis);
+    console.debug("Approx. time remaining until next drop (mins): ", remaining_millis);
+    document.title = `[${remaining_time_str}] $ ${document.title.substring(document.title.indexOf("$") + 1)}`
+}
+
 function try_get_drop() {
-    _is_inventory_open = is_inventory_open();
-    _is_user_menu_open = is_user_menu_open();
-    _percents = Object.keys(PERCENT_TIMES);
-    _times = Object.values(PERCENT_TIMES);
+    const _is_inventory_open = is_inventory_open();
+    const _is_user_menu_open = is_user_menu_open();
+    const _percents = Object.keys(PERCENT_TIMES);
 
     if (_percents.length > 1 && _percents.includes('100%')) {
         console.debug("PROBABLY CAN CLAIM NOW");
@@ -118,24 +158,11 @@ function try_get_drop() {
                             PERCENT_TIMES = {};
                         }
                         PERCENT_TIMES[progress] = Date.now();
-
-                        if (_times.length > 2) {
-                            let last_percent = _percents[_times.length - 1];
-                            const percents_remaining = 100 - parseInt(last_percent.substring(0, last_percent.length - 1));
-                            let sum_of_time_diffs = 0;
-                            let number_of_time_diffs = 0;
-                            for (let i = 1; i < _times.length - 1; i++) {
-                                sum_of_time_diffs += (_times[i + 1] - _times[i]);
-                                number_of_time_diffs++;
-                            }
-
-                            const avg_time_diff = sum_of_time_diffs / number_of_time_diffs / 1000 / 60;
-                            console.log("Approx. time remaining until next drop (mins): ", percents_remaining * avg_time_diff);
-                        }
-
+                        TIME_TICKS_IN_PERCENT = 0;
                     } else {
                         console.log("WAITING, PROGRESS: ", progress);
                     }
+                    TIME_TICKS_IN_PERCENT++;
                 }
             } else {
                 console.debug("USER MENU IS NOT OPEN, TRYING TO OPEN IT");
@@ -147,21 +174,23 @@ function try_get_drop() {
             }
         }
     }
+    display_remaining_time();
 }
 
-let RETRY_TIMER = null;
+if (disable_claimer) {
+    disable_claimer();
+}
+window.RETRY_TIMER = null;
 
 
 function disable_claimer() {
-    if (RETRY_TIMER) {
-        clearInterval(RETRY_TIMER);
-        RETRY_TIMER = null;
-    }
+    clearInterval(window.RETRY_TIMER);
+    window.RETRY_TIMER = null;
 }
 
 function start_claimer() {
-    RETRY_TIMER = setInterval(try_get_drop, RETRY_TIMEOUT);
-    console.log("Timer id: ", RETRY_TIMER);
+    window.RETRY_TIMER = setInterval(try_get_drop, RETRY_TIMEOUT);
+    console.log("Timer id: ", window.RETRY_TIMER);
     console.log("Call disable_claimer to stop it;")
 }
 
