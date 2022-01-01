@@ -42,7 +42,7 @@ function try_press_inventory() {
 }
 
 function try_return_to_stream() {
-    const return_buttons = document.querySelectorAll('[data-test-selector="video-player__video-layout"] button');
+    const return_buttons = document.querySelector('[data-test-selector="video-player__video-layout"]').getElementsByTagName("button");
     if (return_buttons.length != 3) {
         return false;
     }
