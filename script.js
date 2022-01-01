@@ -80,12 +80,11 @@ function calculate_time_data() {
         for (let i = 1; i < _times.length - 1; i++) {
             diffs.push(_times[i + 1] - _times[i]);
         }
-        let g_mean_time_diff = geometric_mean(diffs);
-        diffs.filter((v) => v >= g_mean_time_diff * 0.1 && v <= g_mean_time_diff * 1.1);
-        g_mean_time_diff = geometric_mean(diffs);
-        g_mean_time_diff = (Math.ceil(g_mean_time_diff / 6000)) * 6000;
-        return ((percents_remaining * g_mean_time_diff) - TIME_TICKS_IN_PERCENT * RETRY_TIMEOUT);
+        let time_diff_per_percent = (Math.ceil(geometric_mean(diffs) / 6000)) * 6000;
+        time_diff_per_percent / RETRY_TIMEOUT
+        return ((percents_remaining * time_diff_per_percent) - TIME_TICKS_IN_PERCENT * RETRY_TIMEOUT);
     }
+    return undefined;
 }
 
 
@@ -96,9 +95,13 @@ function millis_to_hhmmss(millis) {
 
 function display_remaining_time() {
     const remaining_millis = calculate_time_data();
-    const remaining_time_str = millis_to_hhmmss(remaining_millis);
-    console.debug("Approx. time remaining until next drop (mins): ", remaining_millis);
-    document.title = `[${remaining_time_str}] $ ${document.title.substring(document.title.indexOf("$") + 1)}`
+    if (remaining_millis !== undefined) {
+        const remaining_time_str = millis_to_hhmmss(remaining_millis);
+        console.debug("Approx. time remaining until next drop (mins): ", remaining_millis);
+        document.title = `[${remaining_time_str}] $ ${document.title.substring(document.title.indexOf("$") + 1)}`
+    } else {
+        document.title = `${document.title.substring(document.title.indexOf("$") + 1)}`
+    }
 }
 
 function try_get_drop() {
