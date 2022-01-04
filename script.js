@@ -43,10 +43,7 @@ function try_press_inventory() {
 
 function try_return_to_stream() {
     const return_buttons = document.querySelector('.persistent-player').getElementsByTagName("button");
-    if (return_buttons.length != 5) {
-        return false;
-    }
-    return_buttons[3].click(); // 1st button closes the persistent player, 2nd returns to the normal player, 3rd pauses the stream
+    return_buttons[return_buttons.length - 2].click(); // hail mary
     return true;
 }
 
