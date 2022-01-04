@@ -43,18 +43,16 @@ function try_press_inventory() {
 
 function try_return_to_stream() {
     const return_buttons = document.querySelector('.persistent-player').getElementsByTagName("button");
-    if (return_buttons.length != 3) {
+    if (return_buttons.length != 5) {
         return false;
     }
-    return_buttons[1].click(); // 1st button closes the persistent player, 2nd returns to the normal player, 3rd pauses the stream
+    return_buttons[3].click(); // 1st button closes the persistent player, 2nd returns to the normal player, 3rd pauses the stream
     return true;
 }
 
 function get_percent() {
     const paragraphs_for_percent = document.querySelectorAll('a[data-a-target="inventory-dropdown-link"]>div>div>p');
     if (paragraphs_for_percent.length != 2) {
-        console.log(STATE, "NO PROGRESS TEXT FOR DROPS");
-        STATE = null;
         return undefined;
     }
     return paragraphs_for_percent[1].innerText.split(" ")[0];
